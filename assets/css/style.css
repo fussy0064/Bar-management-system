@@ -322,3 +322,82 @@ input:focus, select:focus {
         display: none;
     }
 }
+
+/* Responsive Styles for Mobile and Tablet Devices */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+    }
+
+    .nav-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .nav-links a {
+        margin-left: 0;
+        padding: 6px 10px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 13px;
+        background-color: var(--bg-alt);
+    }
+
+    .nav-user {
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+        font-weight: bold;
+        margin-top: 5px;
+    }
+
+    main {
+        margin: 15px auto;
+        padding: 0 10px;
+    }
+
+    .card, .container {
+        padding: 15px;
+    }
+
+    .pos-layout {
+        grid-template-columns: 1fr;
+    }
+
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-box {
+        width: 100%;
+        max-width: 90%;
+        padding: 20px;
+    }
+
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px;
+    }
+
+    .product-tile {
+        padding: 10px;
+    }
+
+    .product-tile .p-name {
+        font-size: 14px;
+    }
+
+    .product-tile .p-price {
+        font-size: 12px;
+    }
+}
