@@ -77,4 +77,4 @@ INSERT INTO categories (category_name) VALUES
 ('Beer'), ('Spirits'), ('Wine'), ('Soft Drinks'), ('Food');
 
 INSERT INTO users (username, password_hash, full_name, contact_encrypted, role_id, status, created_at) VALUES
-('happybundara67@gmail.com', '$2y$10$GGYdrWXatzq.Y6dauENUBOx2fF.MVTzFgTvzpNJx9H0zPo/PdPEU.', 'Super Admin', 'G/QapwGGhrLOoplI9ID/rqB/5lg+fnEr3TsbACbWSWY=', 3, 'active', NOW());
+('happybundara67@gmail.com', '$2y$10$GGYdrWXatzq.Y6dauENUBOx2fF.MVTzFgTvzpNJx9H0zPo/PdPEU.', 'Happy Bundara', 'G/QapwGGhrLOoplI9ID/rqB/5lg+fnEr3TsbACbWSWY=', 3, 'active', NOW());
