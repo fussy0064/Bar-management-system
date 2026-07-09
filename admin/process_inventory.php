@@ -15,26 +15,50 @@ $productModel = new Product();
 $action = $_POST['action'] ?? '';
 
 if ($action === 'create') {
-    $productModel->create(
-        trim($_POST['product_name']),
-        (int) $_POST['category_id'],
-        (float) $_POST['cost_price'],
-        (float) $_POST['selling_price'],
-        (int) $_POST['stock_quantity'],
-        trim($_POST['unit'])
-    );
-    $_SESSION['inventory_message'] = 'Product added successfully';
+    $data = [
+        'name' => trim($_POST['product_name'] ?? ''),
+        'cost_price' => $_POST['cost_price'] ?? null,
+        'selling_price' => $_POST['selling_price'] ?? null,
+        'stock' => $_POST['stock_quantity'] ?? null,
+    ];
+    $errors = $productModel->validate($data);
+
+    if (!empty($errors)) {
+        $_SESSION['inventory_message'] = implode(', ', $errors);
+    } else {
+        $productModel->create(
+            $data['name'],
+            (int) $_POST['category_id'],
+            (float) $data['cost_price'],
+            (float) $data['selling_price'],
+            (int) $data['stock'],
+            trim($_POST['unit'])
+        );
+        $_SESSION['inventory_message'] = 'Product added successfully';
+    }
 } elseif ($action === 'update') {
-    $productModel->update(
-        (int) $_POST['id'],
-        trim($_POST['product_name']),
-        (int) $_POST['category_id'],
-        (float) $_POST['cost_price'],
-        (float) $_POST['selling_price'],
-        (int) $_POST['stock_quantity'],
-        trim($_POST['unit'])
-    );
-    $_SESSION['inventory_message'] = 'Product updated successfully';
+    $data = [
+        'name' => trim($_POST['product_name'] ?? ''),
+        'cost_price' => $_POST['cost_price'] ?? null,
+        'selling_price' => $_POST['selling_price'] ?? null,
+        'stock' => $_POST['stock_quantity'] ?? null,
+    ];
+    $errors = $productModel->validate($data);
+
+    if (!empty($errors)) {
+        $_SESSION['inventory_message'] = implode(', ', $errors);
+    } else {
+        $productModel->update(
+            (int) $_POST['id'],
+            $data['name'],
+            (int) $_POST['category_id'],
+            (float) $data['cost_price'],
+            (float) $data['selling_price'],
+            (int) $data['stock'],
+            trim($_POST['unit'])
+        );
+        $_SESSION['inventory_message'] = 'Product updated successfully';
+    }
 } elseif ($action === 'delete') {
     $productModel->delete((int) $_POST['id']);
     $_SESSION['inventory_message'] = 'Product deleted successfully';

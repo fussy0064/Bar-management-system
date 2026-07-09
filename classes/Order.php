@@ -1,18 +1,38 @@
 <?php
 
-require_once __DIR__ . '/../config/Database.php';
-require_once __DIR__ . '/Logger.php';
+require_once __DIR__ . '/Model.php';
+require_once __DIR__ . '/Validator.php';
 require_once __DIR__ . '/Product.php';
 
-class Order
+class Order extends Model
 {
-    private PDO $db;
-    private Logger $logger;
-
-    public function __construct()
+    public function getTableName(): string
     {
-        $this->db = Database::getInstance()->getConnection();
-        $this->logger = new Logger();
+        return 'orders';
+    }
+
+    public function validate(array $data): array
+    {
+        $errors = [];
+        if (empty($data['items'])) {
+            $errors[] = 'Order must have at least one item';
+        }
+        Validator::required($data['payment_method'] ?? '', 'Payment method', $errors);
+        return $errors;
+    }
+
+    // Search by order number (search functionality requirement)
+    public function search(string $keyword): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT o.*, u.full_name AS cashier_name
+             FROM orders o
+             JOIN users u ON o.cashier_id = u.id
+             WHERE o.order_number LIKE ?
+             ORDER BY o.created_at DESC'
+        );
+        $stmt->execute(['%' . $keyword . '%']);
+        return $stmt->fetchAll();
     }
 
     // $items is an array of ['product_id' => int, 'quantity' => int, 'unit_price' => float]
@@ -85,7 +105,7 @@ class Order
             }
 
             $this->db->commit();
-            $this->logger->log($cashierId, 'CREATE_ORDER', "Order {$orderNumber} created, total TZS " . number_format($total, 0));
+            $this->logChange('CREATE_ORDER', "Order {$orderNumber} created, total TZS " . number_format($total, 0));
 
             return $orderId;
         } catch (Exception $e) {

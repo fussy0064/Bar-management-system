@@ -31,7 +31,7 @@ CREATE TABLE products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_name VARCHAR(150) NOT NULL,
     category_id INT NOT NULL,
-    cost_price DECIMAL(12,2) NOT NULL,
+    cost_price TEXT NOT NULL, -- AES-256 encrypted (business-sensitive), decrypted in app via Security::decrypt()
     selling_price DECIMAL(12,2) NOT NULL,
     stock_quantity INT NOT NULL DEFAULT 0,
     unit VARCHAR(20) NOT NULL DEFAULT 'pcs',

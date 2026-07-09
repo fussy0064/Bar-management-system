@@ -14,7 +14,8 @@ if (isset($_GET['edit'])) {
     $editItem = $productModel->getById((int) $_GET['edit']);
 }
 
-$products = $productModel->getAll();
+$search = trim($_GET['q'] ?? '');
+$products = $search !== '' ? $productModel->search($search) : $productModel->getAll();
 $categories = $productModel->getCategories();
 
 $message = $_SESSION['inventory_message'] ?? '';
@@ -76,6 +77,13 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="card">
     <h2 class="page-title">Product Catalog</h2>
+    <form action="<?= BASE_URL ?>/admin/inventory.php" method="GET" style="margin-bottom:1rem;">
+        <input type="text" name="q" placeholder="Search by product or category" value="<?= e($search) ?>">
+        <button type="submit" class="btn">Search</button>
+        <?php if ($search !== ''): ?>
+            <a href="<?= BASE_URL ?>/admin/inventory.php" class="btn">Clear</a>
+        <?php endif; ?>
+    </form>
     <table>
         <tr>
             <th>Product</th><th>Category</th><th>Cost</th><th>Price</th><th>Stock</th><th>Unit</th><th>Actions</th>

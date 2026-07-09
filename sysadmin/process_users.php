@@ -16,14 +16,26 @@ $action = $_POST['action'] ?? '';
 
 if ($action === 'create') {
     $contact = trim($_POST['contact'] ?? '');
-    $userModel->create(
-        trim($_POST['username']),
-        $_POST['password'],
-        trim($_POST['full_name']),
-        (int) $_POST['role_id'],
-        $contact !== '' ? $contact : null
-    );
-    $_SESSION['users_message'] = 'User created successfully';
+    $data = [
+        'username' => trim($_POST['username'] ?? ''),
+        'full_name' => trim($_POST['full_name'] ?? ''),
+        'password' => $_POST['password'] ?? '',
+        'contact' => $contact,
+    ];
+    $errors = $userModel->validate($data);
+
+    if (!empty($errors)) {
+        $_SESSION['users_message'] = implode(', ', $errors);
+    } else {
+        $userModel->create(
+            $data['username'],
+            $data['password'],
+            $data['full_name'],
+            (int) $_POST['role_id'],
+            $contact !== '' ? $contact : null
+        );
+        $_SESSION['users_message'] = 'User created successfully';
+    }
 } elseif ($action === 'reset_password') {
     $userModel->resetPassword((int) $_POST['id'], $_POST['new_password']);
     $_SESSION['users_message'] = 'Password reset successfully';

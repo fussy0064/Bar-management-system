@@ -1,18 +1,28 @@
 <?php
 
-require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/Model.php';
+require_once __DIR__ . '/Validator.php';
 require_once __DIR__ . '/Security.php';
-require_once __DIR__ . '/Logger.php';
 
-class User
+class User extends Model
 {
-    private PDO $db;
-    private Logger $logger;
-
-    public function __construct()
+    public function getTableName(): string
     {
-        $this->db = Database::getInstance()->getConnection();
-        $this->logger = new Logger();
+        return 'users';
+    }
+
+    public function validate(array $data): array
+    {
+        $errors = [];
+        Validator::required($data['username'] ?? '', 'Username', $errors);
+        Validator::required($data['full_name'] ?? '', 'Full name', $errors);
+        if (!empty($data['password'])) {
+            Validator::minLength($data['password'], 6, 'Password', $errors);
+        }
+        if (!empty($data['contact'])) {
+            Validator::minLength($data['contact'], 7, 'Contact number', $errors);
+        }
+        return $errors;
     }
 
     public function login(string $username, string $password): bool
@@ -31,7 +41,7 @@ class User
             $_SESSION['username'] = $user['username'];
             $_SESSION['full_name'] = $user['full_name'];
             $_SESSION['role'] = $user['role_name'];
-            $this->logger->log((int) $user['id'], 'LOGIN', 'User logged in');
+            $this->logChange('LOGIN', 'User logged in');
             return true;
         }
 
@@ -55,7 +65,7 @@ class User
         ]);
 
         if ($result) {
-            $this->logger->log($_SESSION['user_id'] ?? null, 'CREATE_USER', "Created user: {$username}");
+            $this->logChange('CREATE_USER', "Created user: {$username}");
         }
 
         return $result;
@@ -67,7 +77,7 @@ class User
         $result = $stmt->execute([$userId]);
 
         if ($result) {
-            $this->logger->log($_SESSION['user_id'] ?? null, 'DELETE_USER', "Deactivated user ID: {$userId}");
+            $this->logChange('DELETE_USER', "Deactivated user ID: {$userId}");
         }
 
         return $result;
@@ -79,7 +89,7 @@ class User
         $result = $stmt->execute([Security::hashPassword($newPassword), $userId]);
 
         if ($result) {
-            $this->logger->log($_SESSION['user_id'] ?? null, 'RESET_PASSWORD', "Password reset for user ID: {$userId}");
+            $this->logChange('RESET_PASSWORD', "Password reset for user ID: {$userId}");
         }
 
         return $result;
@@ -93,18 +103,35 @@ class User
              JOIN roles r ON u.role_id = r.id
              ORDER BY u.created_at DESC'
         );
-        $users = $stmt->fetchAll();
+        return $this->decryptContact($stmt->fetchAll());
+    }
 
-        foreach ($users as &$user) {
-            $user['contact'] = Security::decrypt($user['contact_encrypted']);
-        }
-
-        return $users;
+    // Search by username or full name (search functionality requirement)
+    public function search(string $keyword): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT u.id, u.username, u.full_name, u.contact_encrypted, r.role_name, u.status, u.created_at
+             FROM users u
+             JOIN roles r ON u.role_id = r.id
+             WHERE u.username LIKE ? OR u.full_name LIKE ?
+             ORDER BY u.created_at DESC'
+        );
+        $like = '%' . $keyword . '%';
+        $stmt->execute([$like, $like]);
+        return $this->decryptContact($stmt->fetchAll());
     }
 
     public function getRoles(): array
     {
         $stmt = $this->db->query('SELECT * FROM roles ORDER BY id');
         return $stmt->fetchAll();
+    }
+
+    private function decryptContact(array $users): array
+    {
+        foreach ($users as &$user) {
+            $user['contact'] = Security::decrypt($user['contact_encrypted']);
+        }
+        return $users;
     }
 }

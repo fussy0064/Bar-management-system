@@ -1,17 +1,26 @@
 <?php
 
-require_once __DIR__ . '/../config/Database.php';
-require_once __DIR__ . '/Logger.php';
+require_once __DIR__ . '/Model.php';
+require_once __DIR__ . '/Validator.php';
+require_once __DIR__ . '/Security.php';
 
-class Product
+class Product extends Model
 {
-    private PDO $db;
-    private Logger $logger;
-
-    public function __construct()
+    public function getTableName(): string
     {
-        $this->db = Database::getInstance()->getConnection();
-        $this->logger = new Logger();
+        return 'products';
+    }
+
+    // cost_price is business-sensitive, so it is encrypted before saving.
+    // selling_price stays plain so reports/search can use it directly.
+    public function validate(array $data): array
+    {
+        $errors = [];
+        Validator::required($data['name'] ?? '', 'Product name', $errors);
+        Validator::positive($data['cost_price'] ?? null, 'Cost price', $errors);
+        Validator::positive($data['selling_price'] ?? null, 'Selling price', $errors);
+        Validator::positive($data['stock'] ?? null, 'Stock quantity', $errors);
+        return $errors;
     }
 
     public function create(string $name, int $categoryId, float $costPrice, float $sellingPrice, int $stock, string $unit): bool
@@ -20,10 +29,17 @@ class Product
             'INSERT INTO products (product_name, category_id, cost_price, selling_price, stock_quantity, unit, created_at)
              VALUES (?, ?, ?, ?, ?, ?, NOW())'
         );
-        $result = $stmt->execute([$name, $categoryId, $costPrice, $sellingPrice, $stock, $unit]);
+        $result = $stmt->execute([
+            $name,
+            $categoryId,
+            Security::encrypt((string) $costPrice),
+            $sellingPrice,
+            $stock,
+            $unit,
+        ]);
 
         if ($result) {
-            $this->logger->log($_SESSION['user_id'] ?? null, 'ADD_PRODUCT', "Added product: {$name}");
+            $this->logChange('ADD_PRODUCT', "Added product: {$name}");
         }
 
         return $result;
@@ -36,10 +52,18 @@ class Product
              SET product_name = ?, category_id = ?, cost_price = ?, selling_price = ?, stock_quantity = ?, unit = ?, updated_at = NOW()
              WHERE id = ?'
         );
-        $result = $stmt->execute([$name, $categoryId, $costPrice, $sellingPrice, $stock, $unit, $id]);
+        $result = $stmt->execute([
+            $name,
+            $categoryId,
+            Security::encrypt((string) $costPrice),
+            $sellingPrice,
+            $stock,
+            $unit,
+            $id,
+        ]);
 
         if ($result) {
-            $this->logger->log($_SESSION['user_id'] ?? null, 'UPDATE_PRODUCT', "Updated product ID: {$id}");
+            $this->logChange('UPDATE_PRODUCT', "Updated product ID: {$id}");
         }
 
         return $result;
@@ -51,7 +75,7 @@ class Product
         $result = $stmt->execute([$id]);
 
         if ($result) {
-            $this->logger->log($_SESSION['user_id'] ?? null, 'DELETE_PRODUCT', "Deleted product ID: {$id}");
+            $this->logChange('DELETE_PRODUCT', "Deleted product ID: {$id}");
         }
 
         return $result;
@@ -65,14 +89,34 @@ class Product
              JOIN categories c ON p.category_id = c.id
              ORDER BY p.product_name'
         );
-        return $stmt->fetchAll();
+        return $this->decryptCostPrice($stmt->fetchAll());
     }
 
     public function getById(int $id): array|false
     {
         $stmt = $this->db->prepare('SELECT * FROM products WHERE id = ?');
         $stmt->execute([$id]);
-        return $stmt->fetch();
+        $product = $stmt->fetch();
+        if (!$product) {
+            return false;
+        }
+        $product['cost_price'] = Security::decrypt($product['cost_price']);
+        return $product;
+    }
+
+    // Search by product name or category (search functionality requirement)
+    public function search(string $keyword): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT p.*, c.category_name
+             FROM products p
+             JOIN categories c ON p.category_id = c.id
+             WHERE p.product_name LIKE ? OR c.category_name LIKE ?
+             ORDER BY p.product_name'
+        );
+        $like = '%' . $keyword . '%';
+        $stmt->execute([$like, $like]);
+        return $this->decryptCostPrice($stmt->fetchAll());
     }
 
     public function getCategories(): array
@@ -97,7 +141,7 @@ class Product
              ORDER BY p.stock_quantity ASC'
         );
         $stmt->execute([$threshold]);
-        return $stmt->fetchAll();
+        return $this->decryptCostPrice($stmt->fetchAll());
     }
 
     public function getSalesPerformance(): array
@@ -112,5 +156,15 @@ class Product
              ORDER BY total_revenue DESC'
         );
         return $stmt->fetchAll();
+    }
+
+    private function decryptCostPrice(array $rows): array
+    {
+        foreach ($rows as &$row) {
+            if (isset($row['cost_price'])) {
+                $row['cost_price'] = Security::decrypt($row['cost_price']);
+            }
+        }
+        return $rows;
     }
 }

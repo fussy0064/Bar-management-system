@@ -14,6 +14,9 @@ $orderModel = new Order();
 $performance = $productModel->getSalesPerformance();
 $dailySales = $orderModel->getDailySales();
 
+$orderSearch = trim($_GET['order_q'] ?? '');
+$orderResults = $orderSearch !== '' ? $orderModel->search($orderSearch) : [];
+
 $pageTitle = 'Sales Report';
 require_once __DIR__ . '/../includes/header.php';
 ?>
@@ -34,6 +37,32 @@ require_once __DIR__ . '/../includes/header.php';
                 </tr>
             <?php endforeach; ?>
         </table>
+    <?php endif; ?>
+</div>
+
+<div class="card">
+    <h2 class="page-title">Find an Order</h2>
+    <form action="<?= BASE_URL ?>/admin/sales_report.php" method="GET" style="margin-bottom:1rem;">
+        <input type="text" name="order_q" placeholder="Search by order number" value="<?= e($orderSearch) ?>">
+        <button type="submit" class="btn">Search</button>
+    </form>
+    <?php if ($orderSearch !== ''): ?>
+        <?php if (empty($orderResults)): ?>
+            <p>No orders found.</p>
+        <?php else: ?>
+            <table>
+                <tr><th>Order #</th><th>Cashier</th><th>Total</th><th>Payment</th><th>Date</th></tr>
+                <?php foreach ($orderResults as $order): ?>
+                    <tr>
+                        <td><?= e($order['order_number']) ?></td>
+                        <td><?= e($order['cashier_name']) ?></td>
+                        <td><?= formatCurrency($order['total_amount']) ?></td>
+                        <td><?= e($order['payment_method']) ?></td>
+                        <td><?= e($order['created_at']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </table>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
