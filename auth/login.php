@@ -27,9 +27,13 @@ unset($_SESSION['login_error']);
         <label for="username">Username</label>
         <input type="text" id="username" name="username" required autofocus>
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
+        <div class="password-wrap">
+            <input type="password" id="password" name="password" required>
+            <button type="button" class="password-toggle" data-target="password" aria-label="Show password">👁️</button>
+        </div>
         <button type="submit" class="btn-primary" style="width:100%;">Login</button>
     </form>
 </div>
+<script src="<?= BASE_URL ?>/assets/js/password-toggle.js"></script>
 </body>
 </html>

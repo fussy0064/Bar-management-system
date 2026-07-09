@@ -401,3 +401,26 @@ input:focus, select:focus {
         font-size: 12px;
     }
 }
+
+/* Password show/hide toggle */
+.password-wrap {
+    position: relative;
+}
+
+.password-wrap input[type="password"],
+.password-wrap input[type="text"] {
+    padding-right: 40px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 4px;
+}

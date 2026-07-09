@@ -33,7 +33,10 @@ require_once __DIR__ . '/../includes/header.php';
         <input type="text" id="username" name="username" required>
 
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
+        <div class="password-wrap">
+            <input type="password" id="password" name="password" required>
+            <button type="button" class="password-toggle" data-target="password" aria-label="Show password">👁️</button>
+        </div>
 
         <label for="full_name">Full Name</label>
         <input type="text" id="full_name" name="full_name" required>
@@ -81,7 +84,10 @@ require_once __DIR__ . '/../includes/header.php';
                     <form action="<?= BASE_URL ?>/sysadmin/process_users.php" method="POST" style="display:inline-flex; gap:6px; align-items:center;">
                         <input type="hidden" name="action" value="reset_password">
                         <input type="hidden" name="id" value="<?= (int) $user['id'] ?>">
-                        <input type="password" name="new_password" placeholder="New password" required style="width:140px; margin-bottom:0;">
+                        <div class="password-wrap" style="display:inline-block; width:140px;">
+                            <input type="password" id="new_password_<?= (int) $user['id'] ?>" name="new_password" placeholder="New password" required style="width:100%; margin-bottom:0;">
+                            <button type="button" class="password-toggle" data-target="new_password_<?= (int) $user['id'] ?>" aria-label="Show password">👁️</button>
+                        </div>
                         <button type="submit" class="btn">Reset</button>
                     </form>
                     <form action="<?= BASE_URL ?>/sysadmin/process_users.php" method="POST" onsubmit="return confirm('Deactivate this user?');">
